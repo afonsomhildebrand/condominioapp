@@ -48,6 +48,15 @@ class Database:
             )
         """)
         self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS predios (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nome VARCHAR(255) NOT NULL,
+                endereco VARCHAR(255),
+                condominio_id INT NOT NULL,
+                FOREIGN KEY (condominio_id) REFERENCES condominios(id) ON DELETE CASCADE
+            )
+        """)
+        self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS gastos (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 descricao VARCHAR(255) NOT NULL,
@@ -77,6 +86,27 @@ class Database:
                 FOREIGN KEY (condominio_id) REFERENCES condominios(id) ON DELETE CASCADE
             )
         """)
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS pagamentos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                morador_id INT NOT NULL,
+                condominio_id INT NOT NULL,
+                referencia VARCHAR(7) NOT NULL,
+                valor DECIMAL(10,2) NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'pendente',
+                data_pagamento DATE NULL,
+                FOREIGN KEY (morador_id) REFERENCES moradores(id) ON DELETE CASCADE,
+                FOREIGN KEY (condominio_id) REFERENCES condominios(id) ON DELETE CASCADE
+            )
+        """)
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=%s AND TABLE_NAME='condominios' AND COLUMN_NAME='sindico_morador_id'",
+            (self.database,)
+        )
+        exists = self.cursor.fetchone()[0]
+        if exists == 0:
+            self.cursor.execute("ALTER TABLE condominios ADD COLUMN sindico_morador_id INT NULL")
+            self.cursor.execute("ALTER TABLE condominios ADD CONSTRAINT fk_sindico_morador FOREIGN KEY (sindico_morador_id) REFERENCES moradores(id) ON DELETE SET NULL")
 
         self.conn.commit()
 
@@ -172,3 +202,56 @@ class Database:
 
     def close(self):
         self.conn.close()
+    
+    def add_pagamento(self, morador_id, condominio_id, referencia, valor, status='pendente', data_pagamento=None):
+        self.cursor.execute(
+            "INSERT INTO pagamentos (morador_id, condominio_id, referencia, valor, status, data_pagamento) VALUES (%s, %s, %s, %s, %s, %s)",
+            (morador_id, condominio_id, referencia, valor, status, data_pagamento)
+        )
+        self.conn.commit()
+    
+    def get_pagamentos(self, condominio_id=None, morador_id=None, referencia=None):
+        base_query = "SELECT * FROM pagamentos"
+        filters = []
+        params = []
+        if condominio_id is not None:
+            filters.append("condominio_id=%s")
+            params.append(condominio_id)
+        if morador_id is not None:
+            filters.append("morador_id=%s")
+            params.append(morador_id)
+        if referencia is not None:
+            filters.append("referencia=%s")
+            params.append(referencia)
+        if filters:
+            base_query += " WHERE " + " AND ".join(filters)
+        self.cursor.execute(base_query, tuple(params))
+        return self.cursor.fetchall()
+    
+    def add_predio(self, nome, condominio_id, endereco=None):
+        self.cursor.execute(
+            "INSERT INTO predios (nome, endereco, condominio_id) VALUES (%s, %s, %s)",
+            (nome, endereco, condominio_id)
+        )
+        self.conn.commit()
+    
+    def get_predios(self, condominio_id=None):
+        if condominio_id is not None:
+            self.cursor.execute("SELECT * FROM predios WHERE condominio_id=%s", (condominio_id,))
+        else:
+            self.cursor.execute("SELECT * FROM predios")
+        return self.cursor.fetchall()
+    
+    def set_sindico(self, condominio_id, morador_id):
+        self.cursor.execute(
+            "UPDATE condominios SET sindico_morador_id=%s WHERE id=%s",
+            (morador_id, condominio_id)
+        )
+        self.conn.commit()
+    
+    def get_sindico(self, condominio_id):
+        self.cursor.execute(
+            "SELECT m.* FROM moradores m JOIN condominios c ON c.sindico_morador_id = m.id WHERE c.id=%s",
+            (condominio_id,)
+        )
+        return self.cursor.fetchone()

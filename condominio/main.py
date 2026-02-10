@@ -77,7 +77,7 @@ class Dashboard:
         self.root.title(f"Sistema Condomínio - Usuário: {self.username} ({self.role})")
         self.root.geometry("800x600")
         
-        self.db = Database()
+        self.db = None
         
         self.create_menu()
         self.create_welcome_screen()
@@ -91,6 +91,7 @@ class Dashboard:
         if self.role == 'admin':
             menu_cadastros.add_command(label="Condomínios", command=self.open_condominios)
             menu_cadastros.add_command(label="Usuários / Síndicos", command=self.open_usuarios)
+            menu_cadastros.add_command(label="Prédios", command=self.open_predios)
             menu_cadastros.add_separator()
         
         menu_cadastros.add_command(label="Moradores", command=self.open_moradores)
@@ -129,25 +130,45 @@ class Dashboard:
         if self.role != 'admin':
             messagebox.showwarning("Acesso Negado", "Apenas administradores podem gerenciar condomínios.")
             return
+        if self.db is None:
+            self.db = Database()
         CondominioWindow(self.root, self.db)
 
     def open_usuarios(self):
         if self.role != 'admin':
             messagebox.showwarning("Acesso Negado", "Apenas administradores podem gerenciar usuários.")
             return
+        if self.db is None:
+            self.db = Database()
         UsuarioWindow(self.root, self.db)
 
     def open_moradores(self):
+        if self.db is None:
+            self.db = Database()
         MoradorWindow(self.root, self.db, self.role, self.condo_id)
 
     def open_gastos(self):
+        if self.db is None:
+            self.db = Database()
         GastoWindow(self.root, self.db, self.role, self.condo_id)
         
     def open_funcionarios(self):
+        if self.db is None:
+            self.db = Database()
         FuncionarioWindow(self.root, self.db, self.role, self.condo_id)
 
     def open_obras(self):
+        if self.db is None:
+            self.db = Database()
         ObraWindow(self.root, self.db, self.role, self.condo_id)
+    
+    def open_predios(self):
+        if self.role != 'admin':
+            messagebox.showwarning("Acesso Negado", "Apenas administradores podem gerenciar prédios.")
+            return
+        if self.db is None:
+            self.db = Database()
+        PredioWindow(self.root, self.db)
 
 
 # --- Classes das Janelas de Cadastro ---
@@ -319,7 +340,8 @@ class MoradorWindow:
         tk.Button(self.window, text="Adicionar Morador", command=self.add).pack(pady=5)
         
         # List
-        self.tree = ttk.Treeview(self.window, columns=("Nome", "Unidade", "Contato", "Valor", "Condo ID"), show="headings")
+        self.tree = ttk.Treeview(self.window, columns=("ID", "Nome", "Unidade", "Contato", "Valor", "Condo ID"), show="headings")
+        self.tree.heading("ID", text="ID")
         self.tree.heading("Nome", text="Nome")
         self.tree.heading("Unidade", text="Unidade")
         self.tree.heading("Contato", text="Contato")
@@ -328,6 +350,9 @@ class MoradorWindow:
         self.tree.pack(fill=tk.BOTH, expand=True)
         
         self.refresh_list()
+        
+        if self.role == 'admin':
+            ttk.Button(self.window, text="Designar Síndico", command=self.designar_sindico).pack(pady=6)
 
     def add(self):
         nome = self.entry_nome.get()
@@ -355,8 +380,19 @@ class MoradorWindow:
         data = self.db.get_moradores(condo_filter)
         
         for row in data:
-            # row: id, nome, unidade, contato, condominio_id, valor
-            self.tree.insert("", tk.END, values=(row[1], row[2], row[3], row[5], row[4]))
+            self.tree.insert("", tk.END, values=(row[0], row[1], row[2], row[3], row[5], row[4]))
+    
+    def designar_sindico(self):
+        sel = self.tree.selection()
+        if not sel:
+            messagebox.showerror("Erro", "Selecione um morador")
+            return
+        item = self.tree.item(sel[0])
+        vals = item["values"]
+        morador_id = vals[0]
+        condo_id = vals[5]
+        self.db.set_sindico(condo_id, morador_id)
+        messagebox.showinfo("Sucesso", "Síndico designado")
 
 class GastoWindow:
     def __init__(self, parent, db, role, user_condo_id):
@@ -480,6 +516,56 @@ class ObraWindow:
         data = self.db.get_obras(condo_filter)
         for row in data:
             self.tree.insert("", tk.END, values=(row[1], row[2], row[3], row[4]))
+        
+class PredioWindow:
+    def __init__(self, parent, db):
+        self.window = tk.Toplevel(parent)
+        self.window.title("Gerenciar Prédios")
+        self.window.geometry("600x500")
+        self.db = db
+        
+        tk.Label(self.window, text="Nome do Prédio/Bloco:").pack()
+        self.entry_nome = tk.Entry(self.window)
+        self.entry_nome.pack()
+        
+        tk.Label(self.window, text="Endereço (opcional):").pack()
+        self.entry_endereco = tk.Entry(self.window)
+        self.entry_endereco.pack()
+        
+        tk.Label(self.window, text="ID Condomínio:").pack()
+        self.entry_condo = tk.Entry(self.window)
+        self.entry_condo.pack()
+        
+        tk.Button(self.window, text="Adicionar Prédio", command=self.add).pack(pady=5)
+        
+        self.tree = ttk.Treeview(self.window, columns=("ID", "Nome", "Endereço", "Condo ID"), show="headings")
+        self.tree.heading("ID", text="ID")
+        self.tree.heading("Nome", text="Nome")
+        self.tree.heading("Endereço", text="Endereço")
+        self.tree.heading("Condo ID", text="Condo ID")
+        self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        self.refresh_list()
+    
+    def add(self):
+        nome = self.entry_nome.get()
+        endereco = self.entry_endereco.get()
+        condo_id = self.entry_condo.get()
+        if nome and condo_id:
+            self.db.add_predio(nome, condo_id, endereco if endereco else None)
+            self.entry_nome.delete(0, tk.END)
+            self.entry_endereco.delete(0, tk.END)
+            self.entry_condo.delete(0, tk.END)
+            self.refresh_list()
+        else:
+            messagebox.showerror("Erro", "Preencha nome e condomínio")
+    
+    def refresh_list(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        data = self.db.get_predios()
+        for row in data:
+            self.tree.insert("", tk.END, values=(row[0], row[1], row[2], row[3]))
 
 class FuncionarioWindow:
     def __init__(self, parent, db, role, user_condo_id):

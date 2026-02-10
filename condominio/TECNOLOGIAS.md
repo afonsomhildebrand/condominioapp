@@ -8,7 +8,7 @@
 ## Interface Gráfica
 - Tkinter
   - Toolkit padrão do Python para GUI
-  - Janelas: Login, Dashboard e módulos de cadastro (Moradores, Gastos, Obras, Funcionários, Condomínios, Usuários)
+  - Janelas: Login, Dashboard e módulos de cadastro (Moradores, Gastos, Obras, Funcionários, Condomínios, Usuários, Prédios)
   - Widgets usados: `Tk`, `Toplevel`, `Menu`, `Label`, `Entry`, `Button`, `Treeview`
 
 ## Banco de Dados
@@ -19,6 +19,7 @@
   - Conexão nativa com MySQL
   - Placeholders `%s` em consultas
   - Integração direta com cursores e commits
+  - Tabelas principais: `condominios` (com `sindico_morador_id`), `moradores`, `predios`, `funcionarios`, `gastos`, `obras`, `pagamentos`
 
 ## Configuração
 - Variáveis de ambiente:
@@ -44,6 +45,5 @@
   - `py main.py`
 
 ## Estrutura do Projeto
-- [main.py](file:///c:/Users/afons/Documents/trae_projects/condominio/main.py): GUI e fluxo de login/acesso
-- [database.py](file:///c:/Users/afons/Documents/trae_projects/condominio/database.py): conexão, criação do schema e CRUD
-
+- [main.py](file:///Users/afonsohildebrand/Downloads/condominioapp/condominio/main.py): GUI, menus e janelas de cadastro
+- [database.py](file:///Users/afonsohildebrand/Downloads/condominioapp/condominio/database.py): conexão, criação do schema e CRUD (inclui prédios, pagamentos e síndico)

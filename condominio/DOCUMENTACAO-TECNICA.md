@@ -2,7 +2,7 @@
 
 ## Arquitetura
 - Camada de GUI: Tkinter (janelas `LoginWindow`, `Dashboard` e módulos de cadastro)
-- Camada de Dados: classe `Database` ([database.py](file:///c:/Users/afons/Documents/trae_projects/condominio/database.py))
+- Camada de Dados: classe `Database` ([database.py](file:///Users/afonsohildebrand/Downloads/condominioapp/condominio/database.py))
 - Driver MySQL: `mysql-connector-python`
 - Configuração: variáveis de ambiente `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
 
@@ -23,6 +23,7 @@ Schema criado automaticamente na inicialização:
   - `id` INT PK AUTO_INCREMENT
   - `nome` VARCHAR(255) NOT NULL
   - `endereco` VARCHAR(255) NOT NULL
+  - `sindico_morador_id` INT NULL FK -> `moradores(id)` ON DELETE SET NULL
 - `usuarios`
   - `id` INT PK AUTO_INCREMENT
   - `username` VARCHAR(255) UNIQUE NOT NULL
@@ -36,6 +37,11 @@ Schema criado automaticamente na inicialização:
   - `contato` VARCHAR(255)
   - `condominio_id` INT NOT NULL FK -> `condominios(id)` ON DELETE CASCADE
   - `valor_condominio` DECIMAL(10,2)
+- `predios`
+  - `id` INT PK AUTO_INCREMENT
+  - `nome` VARCHAR(255) NOT NULL
+  - `endereco` VARCHAR(255) NULL
+  - `condominio_id` INT NOT NULL FK -> `condominios(id)` ON DELETE CASCADE
 - `gastos`
   - `id` INT PK AUTO_INCREMENT
   - `descricao` VARCHAR(255) NOT NULL
@@ -54,6 +60,14 @@ Schema criado automaticamente na inicialização:
   - `cargo` VARCHAR(100) NOT NULL
   - `salario` DECIMAL(10,2)
   - `condominio_id` INT NOT NULL FK -> `condominios(id)` ON DELETE CASCADE
+- `pagamentos`
+  - `id` INT PK AUTO_INCREMENT
+  - `morador_id` INT NOT NULL FK -> `moradores(id)` ON DELETE CASCADE
+  - `condominio_id` INT NOT NULL FK -> `condominios(id)` ON DELETE CASCADE
+  - `referencia` VARCHAR(7) NOT NULL (AAAA-MM)
+  - `valor` DECIMAL(10,2) NOT NULL
+  - `status` VARCHAR(20) NOT NULL DEFAULT 'pendente'
+  - `data_pagamento` DATE NULL
 
 ## Operações Principais (Database)
 - Usuários:
@@ -62,9 +76,13 @@ Schema criado automaticamente na inicialização:
 - Condomínios:
   - `add_condominio(nome, endereco)`
   - `get_condominios()`
+  - `set_sindico(condominio_id, morador_id)` / `get_sindico(condominio_id)`
 - Moradores:
   - `add_morador(nome, unidade, contato, condominio_id, valor)`
   - `get_moradores(condominio_id=None)`
+- Prédios:
+  - `add_predio(nome, condominio_id, endereco=None)`
+  - `get_predios(condominio_id=None)`
 - Gastos:
   - `add_gasto(descricao, valor, data, condominio_id)`
   - `get_gastos(condominio_id=None)`
@@ -74,6 +92,9 @@ Schema criado automaticamente na inicialização:
 - Funcionários:
   - `add_funcionario(nome, cargo, salario, condominio_id)`
   - `get_funcionarios(condominio_id=None)`
+- Pagamentos:
+  - `add_pagamento(morador_id, condominio_id, referencia, valor, status='pendente', data_pagamento=None)`
+  - `get_pagamentos(condominio_id=None, morador_id=None, referencia=None)`
 
 ## Execução e Configuração
 - Instalação do driver:
@@ -87,4 +108,3 @@ Schema criado automaticamente na inicialização:
 - Hash de senha: SHA-256
 - Não armazenar senhas em texto plano
 - Recomendado usar usuário MySQL dedicado e restringir privilégios a `condominio.*`
-

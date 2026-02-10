@@ -23,8 +23,8 @@ O sistema permite gerenciar condomínios, moradores, gastos, obras e funcionári
 
 ## Perfis de Acesso
 - Administrador
-  - Acessa todos os módulos: Condomínios, Usuários/Síndicos, Moradores, Funcionários, Gastos, Obras
-  - Cria síndicos vinculando-os a um condomínio específico
+  - Acessa todos os módulos: Condomínios, Usuários/Síndicos, Prédios, Moradores, Funcionários, Gastos, Obras
+  - Cria síndicos designando um morador de um condomínio específico
 - Síndico
   - Acessa apenas: Moradores, Funcionários, Gastos e Obras do condomínio vinculado
   - Não enxerga “Condomínios” nem “Usuários/Síndicos”
@@ -35,20 +35,23 @@ O sistema permite gerenciar condomínios, moradores, gastos, obras e funcionári
    - Menu “Cadastros” > “Condomínios”
    - Informe Nome e Endereço, clique “Adicionar”
    - Anote o ID gerado para vincular síndicos e lançamentos
-2. Criar Síndico
-   - Menu “Cadastros” > “Usuários / Síndicos”
-   - Informe `username`, `senha`, selecione nível “sindico”
-   - Informe o `ID do Condomínio` ao qual ficará vinculado
-3. Moradores
+2. Cadastrar Prédio
+   - Menu “Cadastros” > “Prédios”
+   - Informe Nome do prédio/bloco, Endereço (opcional) e `ID do Condomínio`
+3. Criar Síndico
+   - Menu “Cadastros” > “Moradores”
+   - Cadastre moradores no condomínio
+   - Selecione um morador na lista e clique em “Designar Síndico”
+4. Moradores
    - Menu “Cadastros” > “Moradores”
    - Como Admin, informe o ID do condomínio ao cadastrar
-4. Gastos
+5. Gastos
    - Menu “Gestão” > “Gastos / Despesas”
    - Como Admin, informe o ID do condomínio, descrição, valor
-5. Obras
+6. Obras
    - Menu “Gestão” > “Obras”
    - Informe descrição, custo, status e ID do condomínio
-6. Funcionários
+7. Funcionários
    - Menu “Cadastros” > “Funcionários”
    - Informe nome, cargo, salário e ID do condomínio
 
@@ -68,4 +71,3 @@ O sistema permite gerenciar condomínios, moradores, gastos, obras e funcionári
 - Use um usuário MySQL dedicado ao sistema (não `root`)
 - Mantenha senhas seguras
 - Faça backups do banco periodicamente
-
